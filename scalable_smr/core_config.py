@@ -39,9 +39,9 @@ def make_core_config(self):
                     if self.one_material:
                         continue#pass # ONE MATERIAL
                     elif fatfilled(x,y,r_core) and not self.without_gadolinia:
-                        make_new_Gdfuel_element(self, f"{core_i:02d}{core_j:02d}", n_fei,0.0495, 0.08)
+                        make_new_Gdfuel_element(self, f"{core_i:02d}{core_j:02d}", n_fei, self.fuel_enrichment, 0.08)
                     else: 
-                        make_new_fuel_element(self, f"{core_i:02d}{core_j:02d}", int(n_fei), 0.0495)
+                        make_new_fuel_element(self, f"{core_i:02d}{core_j:02d}", int(n_fei), self.fuel_enrichment)
                 else:
                     if not found_edge:
                         if core_i not in list_i:
@@ -57,7 +57,7 @@ def make_core_config(self):
 def make_core_config2(self):
     d = self.n_diam_fe
     if self.one_material:
-        make_new_fuel_element(self, f"0000", np.sum(self.n_fe), 0.0495) # ONE MATERIAL
+        make_new_fuel_element(self, f"0000", np.sum(self.n_fe), self.fuel_enrichment) # ONE MATERIAL
         # self.fes[f"F0000"].plot()
     make_water_element(self)
     core_arr = []

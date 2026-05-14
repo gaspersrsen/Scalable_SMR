@@ -21,6 +21,7 @@ class SMR:
     one_material: bool = False
     n_fuel_z_sections: int = 6
     without_gadolinia: bool = False
+    fuel_enrichment: float = 0.0495
     
     # def __init__(self,
     #     r_fuel=0.4058,
