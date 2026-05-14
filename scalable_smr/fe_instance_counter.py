@@ -17,12 +17,8 @@ def fatfilled(x,y,radius):
 
 def get_n_fe(d):
     n_instances = 0
-    list_i=[]
     r = (d-1) / 2
-    j = -int(np.floor(d/2))
     for y in np.linspace(-r,r,d):
-        i = -int(np.floor(d/2))
-        found_edge = False
         for x in np.linspace(-r,r,d):
             if x >= 0 and y >= 0 and y <= x:
                 if filled(x,y,r):
