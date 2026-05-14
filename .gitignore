@@ -1,0 +1,48 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Packaging and build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments and local environment files
+.venv/
+venv/
+env/
+ENV/
+.env
+.env.*
+
+# Test, coverage, and type-check caches
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# OpenMC generated input/output files
+materials.xml
+geometry.xml
+settings.xml
+tallies.xml
+plots.xml
+summary.h5
+statepoint*.h5
+source*.h5
+particles*.h5
+volume_*.h5
+depletion_results*.h5
+tallies.out
+
+# Editor and OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
