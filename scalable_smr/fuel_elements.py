@@ -16,16 +16,36 @@ def init_fuel_elements(self):
     
     self.cells["cell_4"] = openmc.Cell(fill=self.cells["Fplenum"], region=+self.surfaces["sF04"]&-self.surfaces["sF05"])
     self.cells["cell_5"] = openmc.Cell(fill=self.cells["EndCap"], region=+self.surfaces["sF05"]&-self.surfaces["sF06"])
-    #self.cells["cell_6"] = openmc.Cell(fill=self.mats["cool"], region=+sF06&-sF07)
-    self.cells["cell_7"] = openmc.Cell(fill=self.mats["NozleTop"], region=+self.surfaces["sF06"])
+    self.cells["cell_6"] = openmc.Cell(fill=self.mats["cool"], region=+self.surfaces["sF06"]&-self.surfaces["sF07"])
+    self.cells["cell_7"] = openmc.Cell(fill=self.mats["NozleTop"], region=+self.surfaces["sF07"]&-self.surfaces["sF08"])
+    self.cells["cell_8"] = openmc.Cell(fill=self.mats["cool"], region=+self.surfaces["sF08"])
     
     self.universes["base_pin"] = openmc.Universe(name="base_pin")
-    self.universes["base_pin"].add_cells([self.cells["cell_1"],self.cells["cell_2"],self.cells["cell_3_He"],self.cells["cell_3_Zr"],self.cells["cell_3_GRID"],self.cells["cell_4"],self.cells["cell_5"],self.cells["cell_7"]])
+    self.universes["base_pin"].add_cells([self.cells["cell_1"],self.cells["cell_2"],self.cells["cell_3_He"],self.cells["cell_3_Zr"],self.cells["cell_3_GRID"],self.cells["cell_4"],self.cells["cell_5"],self.cells["cell_6"],self.cells["cell_7"],self.cells["cell_8"]])
 
 
 def make_new_fuel_element(self, name, n_instances, enrichment=0.0495):
     print(f"Building fuel element {name} with {n_instances} instances and {enrichment*100} % enrichment")
+
+    # GRC = self.universes["GRC"]
+    # GTU = self.universes["GTU"]
+    GRID = self.universes["GRID"]
+    
+    GTU_base = self.universes["GTU"]
+    self.cells[f"cell_GTU_{name}"] = openmc.Cell(fill=GTU_base, region=+self.surfaces["sF01"])#&-self.surfaces["sF09"])
+    GTU = openmc.Universe(name=f"GTU_{name}")
+    GTU.add_cells([self.cells[f"cell_GTU_{name}"]])
+    self.universes[f"GTU_{name}"] = GTU
+
+    GRC_base = self.universes["GRC"]
+    self.cells[f"cell_GRC_{name}"] = openmc.Cell(fill=GRC_base, region=+self.surfaces["sF01"])#&-self.surfaces["sF09"])
+    GRC = openmc.Universe(name=f"GRC_{name}")
+    GRC.add_cells([self.cells[f"cell_GRC_{name}"]])
+    self.universes[f"GRC_{name}"] = GRC
+    
+    
     fuel_cells = []
+    other_z_cells = []
     for z_sec in range(self.n_fuel_z_sections):
         new_fuel = make_fuel_material(self, f"{name}_z{z_sec}", enrichment)
         new_fuel.volume = ((17**2-25)*n_instances*self.S_pin*self.z_sec_lengths[z_sec])
@@ -34,14 +54,55 @@ def make_new_fuel_element(self, name, n_instances, enrichment=0.0495):
         self.fuel_materials += [new_fuel]
         self.Gd_lib[f"{int(new_fuel.id)}"] = 0
         
-        fuel_cells += [openmc.Cell(fill=new_fuel, region=-self.surfaces["cyl1"]&+self.surfaces[f"sF03_{z_sec}"]&-self.surfaces[f"sF03_{z_sec+1}"])]
-
-    GRC = self.universes["GRC"]
-    GTU = self.universes["GTU"]
-
+        # if self.n_fuel_r_sections == 1:
+        #     fuel_cells += [openmc.Cell(fill=new_fuel, region=-self.surfaces["cyl1"]&+self.surfaces[f"sF03_{z_sec}"]&-self.surfaces[f"sF03_{z_sec+1}"])]
+        # else:
+        for r_sec in range(self.n_fuel_r_sections):
+            if r_sec == 0:
+                self.cells[f"cell_3_{name}_z{z_sec}_r{r_sec}"] = openmc.Cell(fill=new_fuel,
+                    region=-self.surfaces[f"sFuelR_0"]&+self.surfaces[f"sF03_{z_sec}"]&-self.surfaces[f"sF03_{z_sec+1}"])
+                fuel_cells += [self.cells[f"cell_3_{name}_z{z_sec}_r{r_sec}"]]
+                self.fuel_cells_r += [self.cells[f"cell_3_{name}_z{z_sec}_r{r_sec}"]]
+                self.fuel_cells_r_ids += [self.cells[f"cell_3_{name}_z{z_sec}_r{r_sec}"].id]
+            else:
+                self.cells[f"cell_3_{name}_z{z_sec}_r{r_sec}"] = openmc.Cell(fill=new_fuel,
+                    region=+self.surfaces[f"sFuelR_{r_sec-1}"]&-self.surfaces[f"sFuelR_{r_sec}"]&+self.surfaces[f"sF03_{z_sec}"]&-self.surfaces[f"sF03_{z_sec+1}"])
+                fuel_cells += [self.cells[f"cell_3_{name}_z{z_sec}_r{r_sec}"]]
+                self.fuel_cells_r += [self.cells[f"cell_3_{name}_z{z_sec}_r{r_sec}"]]
+                self.fuel_cells_r_ids += [self.cells[f"cell_3_{name}_z{z_sec}_r{r_sec}"].id]
+                    
+                
+                
+        
+        self.cells[f"cell_3_He_{name}_z{z_sec}"] = openmc.Cell(fill=self.mats["helium"],
+                                                               region=-self.surfaces["cyl2"]&+self.surfaces["cyl1"]&+self.surfaces[f"sF03_{z_sec}"]&-self.surfaces[f"sF03_{z_sec+1}"])
+        self.cells[f"cell_3_Zr_{name}_z{z_sec}"] = openmc.Cell(fill=self.mats["zirc4"],
+                                                               region=-self.surfaces["cyl3"]&+self.surfaces["cyl2"]&+self.surfaces[f"sF03_{z_sec}"]&-self.surfaces[f"sF03_{z_sec+1}"])
+        self.cells[f"cell_3_cool_{name}_z{z_sec}"] = openmc.Cell(fill=self.mats["cool"],
+                                                        region=+self.surfaces["cyl3"]&+self.surfaces[f"sF03_{z_sec}"]&-self.surfaces[f"sF03_{z_sec+1}"])
+        other_z_cells += [self.cells[f"cell_3_He_{name}_z{z_sec}"],
+                          self.cells[f"cell_3_Zr_{name}_z{z_sec}"],
+                          self.cells[f"cell_3_cool_{name}_z{z_sec}"]]
+    
+    self.cells[f"cell_1_{name}"] = openmc.Cell(fill=self.mats["NozleBottom"], region=-self.surfaces["sF02"])
+    self.cells[f"cell_2_{name}"] = openmc.Cell(fill=self.cells["EndCap"], region=+self.surfaces["sF02"]&-self.surfaces["sF03"])
+    self.cells[f"cell_4_{name}"] = openmc.Cell(fill=self.cells["Fplenum"], region=+self.surfaces["sF04"]&-self.surfaces["sF05"])
+    self.cells[f"cell_5_{name}"] = openmc.Cell(fill=self.cells["EndCap"], region=+self.surfaces["sF05"]&-self.surfaces["sF06"])
+    self.cells[f"cell_6_{name}"] = openmc.Cell(fill=self.mats["cool"], region=+self.surfaces["sF06"]&-self.surfaces["sF07"])
+    self.cells[f"cell_7_{name}"] = openmc.Cell(fill=self.mats["NozleTop"], region=+self.surfaces["sF07"]&-self.surfaces["sF08"])
+    self.cells[f"cell_8_{name}"] = openmc.Cell(fill=self.mats["cool"], region=+self.surfaces["sF08"])
+    
     xxx = openmc.Universe(name=f"fuel_pin_{name}")
     xxx.add_cells(fuel_cells)
-    xxx.add_cells([openmc.Cell(fill=self.universes["base_pin"], region=+self.surfaces[f"sF00"]&-self.surfaces[f"sF09"])])
+    xxx.add_cells(other_z_cells)
+    xxx.add_cells([self.cells[f"cell_1_{name}"],
+                self.cells[f"cell_2_{name}"],
+                self.cells[f"cell_4_{name}"],
+                self.cells[f"cell_5_{name}"],
+                self.cells[f"cell_6_{name}"],
+                self.cells[f"cell_7_{name}"],
+                self.cells[f"cell_8_{name}"]])
+    # xxx.add_cells([openmc.Cell(fill=self.universes["base_pin"], region=+self.surfaces[f"sF00"]&-self.surfaces[f"sF09"])])
     ### NEEDS a new cell, cannot reuse some bug in OpenMC source code
     
     
@@ -74,9 +135,12 @@ def make_new_fuel_element(self, name, n_instances, enrichment=0.0495):
     new_fe=openmc.Universe()
     new_fe.add_cells([lc_1])#,lc_2])
     self.fes[f"F{name}"] = new_fe#copy.copy(new_fe)
+    self.fe_instances[f"F{name}"] = n_instances
+    self.fe_enrichments[f"F{name}"] = enrichment
 
 
 def make_new_Gdfuel_element(self, name, n_instances, enrichment=0.0495, wGd2O3=0.08):
+    ###TODO needs a rewrite to 
     Gd_layer_z_stack = []
     fuel_cells = []
     for z_sec in range(self.n_fuel_z_sections):
@@ -133,6 +197,8 @@ def make_new_Gdfuel_element(self, name, n_instances, enrichment=0.0495, wGd2O3=0
     new_fe=openmc.Universe()
     new_fe.add_cells([lc_1])#,lc_2])
     self.fes[f"F{name}"] = new_fe#copy.copy(new_fe)
+    self.fe_instances[f"F{name}"] = n_instances
+    self.fe_enrichments[f"F{name}"] = enrichment
 
 
 def make_water_element(self):

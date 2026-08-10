@@ -36,12 +36,13 @@ def make_core_config(self):
                     if y==0: n_fei/=2
                     if x==y: n_fei/=2
                     n_instances += [int(n_fei)]
+                    enr = self.enrichment_function(x, y) if callable(self.enrichment_function) else self.fuel_enrichment
                     if self.one_material:
                         continue#pass # ONE MATERIAL
                     elif fatfilled(x,y,r_core) and not self.without_gadolinia:
-                        make_new_Gdfuel_element(self, f"{core_i:02d}{core_j:02d}", n_fei, self.fuel_enrichment, 0.08)
+                        make_new_Gdfuel_element(self, f"{core_i:02d}{core_j:02d}", n_fei, enr, 0.08)
                     else: 
-                        make_new_fuel_element(self, f"{core_i:02d}{core_j:02d}", int(n_fei), self.fuel_enrichment)
+                        make_new_fuel_element(self, f"{core_i:02d}{core_j:02d}", int(n_fei), enr)
                 else:
                     if not found_edge:
                         if core_i not in list_i:

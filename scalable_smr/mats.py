@@ -60,24 +60,27 @@ def make_base_mats(self):
     zirc4.set_density("atom/b-cm", 4.343885E-02)
     self.mats["zirc4"] = zirc4
 
-    pure_water = openmc.Material(name="pure_water", temperature=560) #560 K, 12.8 MPa
-    pure_water.set_density("g/cm3", 0.74773)
+    pure_water = openmc.Material(name="pure_water", temperature=560)
+    # pure_water.set_density("g/cm3", 0.74773) #560 K, 12.8 MPa
+    pure_water.set_density("g/cm3", 0.74936) #560 K, 13.8 MPa
     pure_water.add_element("H", 2)
     pure_water.add_element("O", 1)
     self.mats["pure_water"] = pure_water
 
-    pure_boric_acid = openmc.Material(name="boric_acid", temperature=560) #560 K, 12.8 MPa
-    pure_boric_acid.set_density("g/cm3", 1.5*0.74773)#0.74773)#*boric_acid.average_molar_mass/cool.average_molar_mass)
+    pure_boric_acid = openmc.Material(name="boric_acid", temperature=560)
+    # pure_boric_acid.set_density("g/cm3", 1.5*0.74773) #560 K, 12.8 MPa
+    pure_boric_acid.set_density("g/cm3", 1.5*0.74936) #560 K, 13.8 MPa
     pure_boric_acid.add_element("H", 3)
     pure_boric_acid.add_element("O", 3)
     pure_boric_acid.add_element("B", 1)
     self.mats["pure_boric_acid"] = pure_boric_acid
 
     # Initial coolant is without boron, but we will mix in boric acid later
-    cool = openmc.Material(name="cool", temperature=560) #560 K, 12.8 MPa
+    cool = openmc.Material(name="cool", temperature=560)
     cool.add_element("H", 2)
     cool.add_element("O", 1)
-    cool.set_density("g/cm3", 0.74773) #0.74773 at 560 K, 12.8 MPa all done
+    cool.set_density("g/cm3", 0.74936) #560 K, 13.8 MPa
+    cool.set_density("g/cm3", 0.74936) #0.74936 at 560 K, 13.8 MPa
     cool.add_s_alpha_beta("c_H_in_H2O")
     self.mats["cool"] = cool
 

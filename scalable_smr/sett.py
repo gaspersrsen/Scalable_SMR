@@ -16,8 +16,12 @@ def settings_default(self):
    #                                                                   only_fissionable = True),
    #                                            constraints = {'fissionable': True})
    settings.source = openmc.IndependentSource(
-                                          space = openmc.stats.Box(lower_left = (-self.fe_pitch*self.n_diam_fe/2, -self.fe_pitch*self.n_diam_fe/2, -self.half_height),
-                                                                  upper_right = (self.fe_pitch*self.n_diam_fe/2,  self.fe_pitch*self.n_diam_fe/2,  self.half_height)),
+                                          space = openmc.stats.Box(lower_left = (-self.fe_pitch*self.n_diam_fe/2,
+                                                                                 -self.fe_pitch*self.n_diam_fe/2,
+                                                                                 self.surfaces["sF03"].coefficients["z0"]),
+                                                                  upper_right = (self.fe_pitch*self.n_diam_fe/2,
+                                                                                 self.fe_pitch*self.n_diam_fe/2,
+                                                                                 self.surfaces["sF04"].coefficients["z0"])),
                                           constraints = {'fissionable': True})
    settings.export_to_xml()
    self.settings = settings

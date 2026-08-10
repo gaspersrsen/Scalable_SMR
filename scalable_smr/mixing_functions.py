@@ -64,7 +64,7 @@ def mat_mix_B(self, conc):#FINDER FUNCTION wo
 
 def init_CR_pos(self):
     global CR_top_pos
-    CR_top_pos = self.surfaces["sF07"].coefficients["z0"] - self.surfaces["sF04"].coefficients["z0"]
+    CR_top_pos = self.surfaces["sF08"].coefficients["z0"] - self.surfaces["sF04"].coefficients["z0"]
     
 def move_CR(self,pos=None):
     global CR_top_pos
@@ -76,10 +76,9 @@ def move_CR(self,pos=None):
         pos = CR_top_pos
     # sGRC01 = openmc.ZPlane(6.506+h-half_height) # CR bottom plug 
     # s_CR_pos = openmc.ZPlane(11.365+h-half_height) #For varying CR position
-    # Top of self.mats["AIC"] cell is sF07
     l_plug = 11.365-6.506
     pos0 = self.surfaces["sF04"].coefficients["z0"] - l_plug
-    posTOP = self.surfaces["sF07"].coefficients["z0"]
+    posTOP = self.surfaces["sF08"].coefficients["z0"]
     self.surfaces["sGRC01"].coefficients["z0"] = posTOP - pos
     self.surfaces["s_CR_pos"].coefficients["z0"] = posTOP + l_plug - pos
     if openmc.lib.is_initialized:
