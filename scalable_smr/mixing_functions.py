@@ -61,6 +61,7 @@ def whole_boron_mix(self, conc):
     rho_mix = cool.get_mass_density()
     m_boron = np.sum([cool.get_mass_density(nuc) for nuc in ["B10","B11"]])
     print(f"Rebuilt material with {m_boron/rho_mix*1e6} ppm")
+    
     for _pos, cool_pos in enumerate(cool_positions):
         self.model.materials[cool_pos] = new_mats[_pos]
     
@@ -104,7 +105,7 @@ def whole_boron_mix(self, conc):
         wgts_out.append(final_mass_sensitivity)
         
     wgts_out = np.array(wgts_out)
-    print("Packaged Non-Linear Mass Sensitivity Weights:\n", wgts_out)
+    # print("Packaged Non-Linear Mass Sensitivity Weights:\n", wgts_out)
     
     out["nuc_fractions"] = [wgts_out]
     return out
