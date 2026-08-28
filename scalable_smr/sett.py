@@ -22,6 +22,8 @@ def settings_default(self):
                                                                   upper_right = (self.fe_pitch*self.n_diam_fe/2,
                                                                                  self.fe_pitch*self.n_diam_fe/2,
                                                                                  self.surfaces["sF04"].coefficients["z0"])),
-                                          constraints = {'fissionable': True})
+                                          constraints = {#'domains': self.fuel_materials,
+                                                         'fissionable': True,
+                                                         'rejection_strategy': 'resample'})
    settings.export_to_xml()
    self.settings = settings

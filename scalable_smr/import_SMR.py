@@ -33,3 +33,8 @@ class SMR:
         model = init_model(self)
         print(f"Returned a reactor model with: {self.n_diam_fe} fuel elements in diameter.\nEdit, export and run the model.")
         return model
+    
+    def set_boron(self, conc):
+        from .mixing_functions import whole_boron_mix
+        out = whole_boron_mix(self, conc)
+        return out

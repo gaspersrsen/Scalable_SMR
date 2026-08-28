@@ -47,17 +47,18 @@ def make_new_fuel_element(self, name, n_instances, enrichment=0.0495):
     fuel_cells = []
     other_z_cells = []
     for z_sec in range(self.n_fuel_z_sections):
-        new_fuel = make_fuel_material(self, f"{name}_z{z_sec}", enrichment)
-        new_fuel.volume = ((17**2-25)*n_instances*self.S_pin*self.z_sec_lengths[z_sec])
-        self.mats[f"{name}_z{z_sec}"] = new_fuel
-        self.materials += [new_fuel]
-        self.fuel_materials += [new_fuel]
-        self.Gd_lib[f"{int(new_fuel.id)}"] = 0
+
         
         # if self.n_fuel_r_sections == 1:
         #     fuel_cells += [openmc.Cell(fill=new_fuel, region=-self.surfaces["cyl1"]&+self.surfaces[f"sF03_{z_sec}"]&-self.surfaces[f"sF03_{z_sec+1}"])]
         # else:
         for r_sec in range(self.n_fuel_r_sections):
+            new_fuel = make_fuel_material(self, f"{name}_z{z_sec}_r{r_sec}", enrichment)
+            new_fuel.volume = ((17**2-25)*n_instances*self.S_pin*self.z_sec_lengths[z_sec]/self.n_fuel_r_sections)
+            self.mats[f"{name}_z{z_sec}_r{r_sec}"] = new_fuel
+            self.materials += [new_fuel]
+            self.fuel_materials += [new_fuel]
+            self.Gd_lib[f"{int(new_fuel.id)}"] = 0
             if r_sec == 0:
                 self.cells[f"cell_3_{name}_z{z_sec}_r{r_sec}"] = openmc.Cell(fill=new_fuel,
                     region=-self.surfaces[f"sFuelR_0"]&+self.surfaces[f"sF03_{z_sec}"]&-self.surfaces[f"sF03_{z_sec+1}"])
@@ -139,7 +140,7 @@ def make_new_fuel_element(self, name, n_instances, enrichment=0.0495):
     self.fe_enrichments[f"F{name}"] = enrichment
 
 
-def make_new_Gdfuel_element(self, name, n_instances, enrichment=0.0495, wGd2O3=0.08):
+def make_new_Gdfuel_element(self, name, n_instances, enrichment=0.0495, wGd2O3=0.08): #TODO needs a rewrite to allow for multiple radial sections
     ###TODO needs a rewrite to 
     Gd_layer_z_stack = []
     fuel_cells = []

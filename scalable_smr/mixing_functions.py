@@ -1,20 +1,5 @@
 from .geo import *
 
-#TODO move outside initial builder
-
-def init_mix(self):
-    ### ENRICHMENT MIXING
-    self.mix_fuel_mats = {}
-    self.mix_fuel_mats["u235_O2"] = make_fuel_material(self, "U235_O2", 1)
-    self.mix_fuel_mats["u238_O2"] = make_fuel_material(self, "U238_O2", 0)
-    # print(u235_O2,u238_O2)
-    the_fuel = self.fuel_materials[0]
-    m_U = np.sum([the_fuel.get_mass_density(nuc) for nuc in ["U235", "U238"]])
-    m_235 = np.sum([the_fuel.get_mass_density(nuc) for nuc in ["U235"]])
-    # print(f"The fuel {m_235/m_U} enrichment")
-
-
-
 def mat_mix_U(self, frac):#FINDER FUNCTION wo
     # init_mix(self)
     the_fuel = self.fuel_materials[0]
@@ -44,23 +29,86 @@ def mat_mix_U(self, frac):#FINDER FUNCTION wo
 
 
 ### BORON MIXING
-def mat_mix_B(self, conc):#FINDER FUNCTION wo
+def whole_boron_mix(self, conc):
     global mix_ao
+    
+    cool_positions = []
+    for _pos, mat in enumerate(self.model.materials):
+        if mat.name == "cool":
+            cool_positions.append(_pos)
+    cool = self.mats["cool"]
     pure_water = self.mats["pure_water"]
     pure_boric_acid = self.mats["pure_boric_acid"]
-    mix_ao, ao_fracs, wgts = openmc.search.get_ao_mix_materials(
-        [pure_water, pure_boric_acid], [None, conc*1e-6],
+    pure_water_density = pure_water.get_mass_density()
+    pure_boric_acid_density = pure_boric_acid.get_mass_density()
+    
+    # Convert ppm back to raw mass fraction for the scaling formulas
+    C_mass = conc * 1e-6
+    
+    mix_ao, ao_fracs, wgts_mix = openmc.search.get_ao_mix_materials(
+        [pure_water, pure_boric_acid], [None, C_mass],
         fracs_target=[None, "B"],
-        percent_type='wo', return_wgts=True)#type can be anything
-    self.mats["cool"].update_material(mix_ao)
-    m_mix = self.mats["cool"].get_mass_density()
-    m_boron = np.sum([self.mats["cool"].get_mass_density(nuc) for nuc in ["B10","B11"]])
-    print(f"Rebuilt material with {m_boron/m_mix*1e6} ppm")
-    out= {}
-    out["materials"] = [self.mats["cool"]]
-    # out["nuc_fractions"] = [np.array(list(ao_fracs.values()))[:,1]]
-    out["nuc_fractions"] = [np.array(list(ao_fracs.values()))[:,1] - wgts[1]/wgts[0]*np.array(list(ao_fracs.values()))[:,0]] #TESTING
+        percent_type='wo', return_wgts=True)
+    
+
+    new_mats = []
+    for mat in [cool]:
+        mat.update_material(mix_ao,
+                            rho=pure_water_density*wgts_mix[0]+pure_boric_acid_density*wgts_mix[1],
+                            rho_units='g/cm3'
+                            )
+        new_mats.append(mat)
+    rho_mix = cool.get_mass_density()
+    m_boron = np.sum([cool.get_mass_density(nuc) for nuc in ["B10","B11"]])
+    print(f"Rebuilt material with {m_boron/rho_mix*1e6} ppm")
+    for _pos, cool_pos in enumerate(cool_positions):
+        self.model.materials[cool_pos] = new_mats[_pos]
+    
+    out = {}
+    out["materials"] = [cool]
+    
+    # 1. Safely extract the exact nuclide ordering used by the active CDI tally
+    tally_nucs = []
+    for t in self.model.tallies:
+        if t.id == 8889:
+            tally_nucs = t.nuclides
+            break
+            
+    if not tally_nucs:
+        tally_nucs = list(mix_ao.keys())
+    
+    nuc_dens_water = pure_water.get_nuclide_atom_densities()
+    nuc_dens_boric = pure_boric_acid.get_nuclide_atom_densities()
+    
+    # Extract the true physical scalar volume fraction of boric acid (index 1)
+    v_b = wgts_mix[1]
+    
+    # 2. Compute the exact Non-Linear Volumetric Correction Factor (Chain Rule link)
+    density_ratio = pure_water_density / pure_boric_acid_density
+    mass_to_vol_correction = 1.0 / (1.0 + C_mass * (density_ratio - 1.0))
+    
+    wgts_out = []
+    # 3. Key-matching loop applies the correction to ensure perfect tally alignment
+    for nuc in tally_nucs:
+        N_mix = mix_ao.get(nuc, 0.0)
+        
+        # Pull unmixed constituent baseline atom densities
+        N_b = nuc_dens_boric.get(nuc, 0.0)
+        N_w = nuc_dens_water.get(nuc, 0.0)
+        
+        # Volumetric sensitivity base (v_b is now a clean scalar)
+        vol_sensitivity = (v_b * (N_b - N_w)) / N_mix if N_mix > 0 else 0.0
+        
+        # Package the non-linear transformation directly into the flat output weight
+        final_mass_sensitivity = vol_sensitivity * mass_to_vol_correction
+        wgts_out.append(final_mass_sensitivity)
+        
+    wgts_out = np.array(wgts_out)
+    print("Packaged Non-Linear Mass Sensitivity Weights:\n", wgts_out)
+    
+    out["nuc_fractions"] = [wgts_out]
     return out
+
 
 def init_CR_pos(self):
     global CR_top_pos
@@ -88,11 +136,3 @@ def move_CR(self,pos=None):
     out= {}
     out["materials"] = []
     return out
-
-### For ONE MATERIAL TESTING
-# Batch estimated value: 213.6957764742751 +/- 0.48700296567380613
-# Moved CR to position 190.51977647427512 cm from fuel top
-
-### Full v3 core
-# Batch estimated value: 205.00506784204995 +/- 0.8051954050882285
-# Moved CR to position 181.82906784204997 cm from fuel top
