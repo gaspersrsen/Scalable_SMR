@@ -69,7 +69,7 @@ def make_base_mats(self):
 
     pure_boric_acid = openmc.Material(name="boric_acid", temperature=560)
     # pure_boric_acid.set_density("g/cm3", 1.5*0.74773) #560 K, 12.8 MPa
-    pure_boric_acid.set_density("g/cm3", 1.5*0.74936) #560 K, 13.8 MPa
+    pure_boric_acid.set_density("g/cm3", 1.435) #solid
     pure_boric_acid.add_element("H", 3)
     pure_boric_acid.add_element("O", 3)
     pure_boric_acid.add_element("B", 1)

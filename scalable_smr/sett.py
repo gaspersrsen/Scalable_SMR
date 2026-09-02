@@ -25,5 +25,6 @@ def settings_default(self):
                                           constraints = {#'domains': self.fuel_materials,
                                                          'fissionable': True,
                                                          'rejection_strategy': 'resample'})
+   settings.source_rejection_fraction = 1e-6
    settings.export_to_xml()
    self.settings = settings

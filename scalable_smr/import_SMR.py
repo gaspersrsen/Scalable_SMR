@@ -24,6 +24,7 @@ class SMR:
     without_gadolinia: bool = False
     fuel_enrichment: float = 0.0495
     enrichment_function: callable = None
+    single_r_fuel: bool = False
         
     def make_model(self):
         import openmc
@@ -35,6 +36,6 @@ class SMR:
         return model
     
     def set_boron(self, conc):
-        from .mixing_functions import whole_boron_mix
-        out = whole_boron_mix(self, conc)
+        from .mixing_functions import ideal_boron_mix
+        out = ideal_boron_mix(self, conc)
         return out
